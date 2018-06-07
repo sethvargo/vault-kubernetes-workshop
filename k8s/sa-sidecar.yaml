@@ -1,0 +1,96 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sa-sidecar
+spec:
+  shareProcessNamespace: true
+  volumes:
+  - name: secrets
+    emptyDir: {}
+  - name: vault-tls
+    secret:
+      secretName: vault-tls
+  - name: vault-token
+    emptyDir:
+      medium: Memory
+
+  initContainers:
+  # The vault-authenticator container authenticates the container using the
+  # kubernetes auth method and puts the resulting token on the filesystem.
+  - name: vault-authenticator
+    image: registry.hub.docker.com/sethvargo/vault-kubernetes-authenticator:0.1.0
+    imagePullPolicy: Always
+    volumeMounts:
+    - name: vault-token
+      mountPath: /home/vault
+    - name: vault-tls
+      mountPath: /etc/vault/tls
+    env:
+    - name: TOKEN_DEST_PATH
+      value: /home/vault/.vault-token
+    - name: VAULT_ADDR
+      valueFrom:
+        configMapKeyRef:
+          name: vault
+          key: vault_addr
+    - name: VAULT_CACERT
+      value: /etc/vault/tls/ca.crt
+    - name: VAULT_ROLE
+      value: myapp-role
+
+  containers:
+    # The consul-template container will pull secrets from Vault and expose
+    # them as files on disk.
+  - name: consul-template
+    image: registry.hub.docker.com/sethvargo/consul-template:0.19.5.dev-alpine
+    imagePullPolicy: Always
+    securityContext:
+      capabilities:
+        add:
+        - SYS_PTRACE
+    volumeMounts:
+    - name: secrets
+      mountPath: /etc/secrets
+    - name: vault-tls
+      mountPath: /etc/vault/tls
+    - name: vault-token
+      mountPath: /home/vault
+    env:
+    - name: HOME
+      value: /home/vault
+    - name: VAULT_ADDR
+      valueFrom:
+        configMapKeyRef:
+          name: vault
+          key: vault_addr
+    - name: VAULT_CACERT
+      value: /etc/vault/tls/ca.crt
+    - name: CT_LOCAL_CONFIG
+      value: |
+        vault {
+          ssl {
+            ca_cert = "/etc/vault/tls/ca.crt"
+          }
+
+          retry {
+            backoff = "1s"
+          }
+        }
+
+        template {
+          contents = <<EOH
+            {{- with secret "gcp/token/myapp-sa" -}}
+            {{ .Data.token }}
+            {{- end -}}
+          EOH
+          destination = "/etc/secrets/config"
+          command     = "/bin/sh -c \"kill -HUP $(pidof vault-demo-app)\""
+        }
+
+  - name: app
+    image: registry.hub.docker.com/sethvargo/vault-demo-app:0.1.0
+    imagePullPolicy: Always
+    volumeMounts:
+    - name: secrets
+      mountPath: /etc/secrets
