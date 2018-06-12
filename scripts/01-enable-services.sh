@@ -7,6 +7,7 @@ if [ -z "${GOOGLE_CLOUD_PROJECT}" ]; then
 fi
 
 gcloud services enable \
+  --async \
   cloudapis.googleapis.com \
   cloudkms.googleapis.com \
   cloudresourcemanager.googleapis.com \
