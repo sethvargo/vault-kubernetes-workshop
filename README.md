@@ -31,7 +31,7 @@ The first step is to install Vault. To install the Vault binary in the current
 working directory, run the install script.
 
 ```text
-bash ./scripts/00-install-vault.sh`
+bash ./scripts/00-install-vault.sh
 ```
 
 This will:
