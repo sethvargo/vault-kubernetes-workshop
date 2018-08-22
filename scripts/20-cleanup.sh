@@ -13,7 +13,7 @@ SERVICE_ACCOUNT="vault-server@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
 kubectl delete pod --force --grace-period=0 kv-sidecar
 kubectl delete pod --force --grace-period=0 sa-sidecar
 
-gcloud container clusters delete my-company \
+gcloud container clusters delete my-apps \
   --async \
   --quiet \
   --zone "${ZONE}"

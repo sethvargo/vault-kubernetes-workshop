@@ -137,7 +137,7 @@ we will attach this reserved IP address to a Kubernetes load balancer. For now,
 we will just reserve the dedicated IP address.
 
 ```text
-bash ./scripts/05-create-public-ip.sh
+bash ./scripts/06-create-public-ip.sh
 ```
 
 We use a regional IP address instead of a global IP address because global IPs
@@ -158,11 +158,11 @@ without TLS, but this is highly discouraged. This step could be replaced with a
 trusted CA like Let's Encrypt, but that is out of scope for this workshop.
 
 ```text
-bash ./scripts/create-certs.sh
+bash ./scripts/07-create-certs.sh
 ```
 
-This will create the Certificate Authority (`ca.key`, `ca.cert`) and Vault
-certificate (`vault.key`, `vault.cert`). In a future step, we will put these
+This will create the Certificate Authority (`ca.key`, `ca.crt`) and Vault
+certificate (`vault.key`, `vault.crt`). In a future step, we will put these
 values in a Kubernetes secret so our pods can access them.
 
 ## 08 Create Config
@@ -173,7 +173,7 @@ configmap. The secure data like the TLS certificates are put in a Kubernetes
 secret.
 
 ```text
-bash ./scripts/setup-config.sh
+bash ./scripts/08-setup-config.sh
 ```
 
 ## 09 Deploy Vault
@@ -186,6 +186,10 @@ The next step is to actually deploy Vault as a StatefulSet on Kubernetes. The re
 1. It gives us consistent naming for referencing the Vault servers (which is
 nice for a workshop).
 
+```text
+bash ./scripts/09-deploy-vault.sh
+```
+
 Vault will automatically be initialized and unsealed via the vault-init service.
 
 ## 10 Deploy Load Balancer
@@ -195,7 +199,7 @@ a Kubernetes Service Load Balancer to forward from the IP address reserved in
 the previous steps to the pods we just created.
 
 ```text
-bash ./scripts/deploy-lb.sh
+bash ./scripts/10-deploy-lb.sh
 ```
 
 The load balancer listens on port 443 and forwards to port 8200 on the
@@ -248,13 +252,13 @@ This will:
 Try reading back the secret by running:
 
 ```text
-vault kv get kv/myapp/config
+vault kv get secret/myapp/config
 ```
 
 You can also read the data via a request tool like curl.
 
 ```text
-curl -k -H "x-vault-token:${VAULT_TOKEN}" "${VAULT_ADDR}/v1/kv/data/myapp/config"
+curl -k -H "x-vault-token:${VAULT_TOKEN}" "${VAULT_ADDR}/v1/secret/myapp/config"
 ```
 
 ## 13 Another Cluster
@@ -279,7 +283,7 @@ of this workshop, we will run them in the same project.
 bash ./scripts/13-create-another-cluster.sh
 ```
 
-This will provision a new Kubernetes cluster named "my-company". We will deploy
+This will provision a new Kubernetes cluster named "my-apps". We will deploy
 all future apps and services in this cluster.
 
 Unlike the previous cluster, this cluster does not attach a service account.
@@ -303,7 +307,7 @@ service account the ability to communicate with the token reviewer API.
 ## 15 Configure Vault to talk to Kubernetes
 
 Next we need to configure the Vault cluster to talk to our new Kubernetes
-cluster ("my-company"). We will need to give Vault the IP address of the
+cluster ("my-apps"). We will need to give Vault the IP address of the
 cluster, the CA information, and the service account to use for accessing the
 token reviewer API.
 

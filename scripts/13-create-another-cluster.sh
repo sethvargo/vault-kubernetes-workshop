@@ -9,7 +9,7 @@ fi
 ZONE="us-west1-b"
 
 # Create a cluster with alpha features so we can do process namespace sharing
-gcloud container clusters create my-company \
+gcloud container clusters create my-apps \
   --cluster-version 1.10.2-gke.3 \
   --enable-cloud-logging \
   --enable-cloud-monitoring \

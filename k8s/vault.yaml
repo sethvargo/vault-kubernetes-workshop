@@ -44,7 +44,7 @@ spec:
               name: vault
               key: kms_key_id
       - name: vault
-        image: registry.hub.docker.com/library/vault:0.10.2
+        image: registry.hub.docker.com/library/vault:0.10.4
         imagePullPolicy: Always
         args: ['server']
         securityContext:
@@ -59,8 +59,8 @@ spec:
           protocol: TCP
         resources:
           requests:
-            cpu: '500m'
-            memory: '1Gi'
+            cpu: '200m'
+            memory: '500M'
         volumeMounts:
         - name: vault-tls
           mountPath: /etc/vault/tls

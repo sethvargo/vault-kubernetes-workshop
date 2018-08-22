@@ -8,7 +8,7 @@ fi
 
 REGION="us-west1"
 ZONE="us-west1-b"
-GKE_NAME="my-company"
+GKE_NAME="my-apps"
 CLUSTER_NAME="gke_${GOOGLE_CLOUD_PROJECT}_${ZONE}_${GKE_NAME}"
 LB_IP="$(gcloud compute addresses describe vault --region ${REGION} --format 'value(address)')"
 

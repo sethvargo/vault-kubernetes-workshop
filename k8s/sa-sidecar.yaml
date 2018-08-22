@@ -47,8 +47,7 @@ spec:
     imagePullPolicy: Always
     securityContext:
       capabilities:
-        add:
-        - SYS_PTRACE
+        add: ['SYS_PTRACE']
     volumeMounts:
     - name: secrets
       mountPath: /etc/secrets

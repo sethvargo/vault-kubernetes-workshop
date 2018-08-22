@@ -76,7 +76,7 @@ spec:
         template {
           contents = <<EOH
             ---
-            {{- with secret "kv/data/myapp/config" }}
+            {{- with secret "secret/myapp/config" }}
             username: {{ .Data.data.username }}
             password: {{ .Data.data.password }}
             {{ end }}
