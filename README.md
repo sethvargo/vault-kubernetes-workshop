@@ -387,7 +387,7 @@ This will:
 
 1. Enable the `database` secrets engine
 
-1. Configure the `databse` secrets engine
+1. Configure the `database` secrets engine
 
 1. Create a "role" which configures the permissions the SQL user has
 
