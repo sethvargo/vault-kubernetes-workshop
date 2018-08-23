@@ -401,7 +401,7 @@ authenticating
 In this example, we follow the same pattern as the static KV secrets, but our sidecar application will pull dynamic credentials from Vault. In this case, we will be pulling a Google Cloud Platform Service Account, but this could be a database password or other dynamically generated credential.
 
 ```text
-bash ./scripts/19-run-sa-sidecar.sh
+bash ./scripts/19-run-db-sidecar.sh
 ```
 
 This also configures a command to run which will signal the application when the
