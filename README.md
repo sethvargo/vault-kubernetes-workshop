@@ -375,7 +375,7 @@ bash ./scripts/17-run-kv-sidecar.sh
 Next we configure Vault to generate dynamic credentials. Vault can generate many
 types of dynamic credentials like database credentials, certificates, etc. For
 this example, we will leverage the GCP secrets engine to dynamically generate
-Google Cloud Platfor Service Accounts.
+Google Cloud Platform CloudSQL MySQL users.
 
 ```text
 bash ./18-setup-dynamic-creds.sh
@@ -383,13 +383,13 @@ bash ./18-setup-dynamic-creds.sh
 
 This will:
 
-1. Enable the `gcp` secrets engine
+1. Create a CloudSQL database
 
-1. Configure the `gcp` secrets engine
+1. Enable the `database` secrets engine
 
-1. Create a "roleset" which determines the permissions the generated service
-account will have (in this example, the permissions grant projectviewer to the
-project)
+1. Configure the `databse` secrets engine
+
+1. Create a "role" which configures the permissions the SQL user has
 
 1. Create a new policy which allows generating these dynamic credentials
 
