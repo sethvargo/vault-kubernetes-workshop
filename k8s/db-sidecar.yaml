@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: sa-sidecar
+  name: db-sidecar
 spec:
   shareProcessNamespace: true
   volumes:
