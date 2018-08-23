@@ -76,7 +76,7 @@ spec:
         template {
           contents = <<EOH
             ---
-            {{- with secret "database/creds/readonly" }}
+            {{- with secret "secret/myapp/config" }}
             username: {{ .Data.username }}
             password: {{ .Data.password }}
             {{ end }}

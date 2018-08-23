@@ -79,8 +79,9 @@ spec:
 
         template {
           contents = <<EOH
-            {{- with secret "gcp/token/myapp-sa" -}}
-            {{ .Data.token }}
+            {{- with secret "database/creds/readonly" -}}
+            username: {{ .Data.username }}
+            password: {{ .Data.password }}
             {{- end -}}
           EOH
           destination = "/etc/secrets/config"
