@@ -79,10 +79,10 @@ spec:
 
         template {
           contents = <<EOH
-            {{- with secret "database/creds/readonly" -}}
+            {{- with secret "database/creds/readonly" }}
             username: {{ .Data.username }}
             password: {{ .Data.password }}
-            {{- end -}}
+            {{ end }}
           EOH
           destination = "/etc/secrets/config"
           command     = "/bin/sh -c \"kill -HUP $(pidof vault-demo-app)\""
