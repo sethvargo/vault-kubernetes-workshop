@@ -62,7 +62,7 @@ By default, a new project does not have many services enabled. Enable all the
 required services with the `01-enable-services.sh` script:
 
 ```text
-bash ./scripts/02-enable-services.sh
+bash ./scripts/01-enable-services.sh
 ```
 
 This will make the necessary calls to enable the enable the right APIs on your
@@ -76,7 +76,7 @@ leverages [Google Cloud Storage][gcs]. Vault does not automatically create the
 storage bucket, so we create it in advance.
 
 ```text
-bash ./scripts/03-setup-storage.sh
+bash ./scripts/02-setup-storage.sh
 ```
 
 Cloud Storage bucket names must be globally unique across all of Google Cloud.
@@ -112,7 +112,7 @@ most minimal set of permissions, in particular:
   helpful if you plan to use the Vault GCP secrets engine)
 
 ```text
-bash ./scripts/04-setup-iam-service-account.sh
+bash ./scripts/04-create-iam-service-account.sh
 ```
 
 ## 05 Create Kubernetes Cluster
