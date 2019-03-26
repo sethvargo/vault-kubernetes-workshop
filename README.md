@@ -414,5 +414,5 @@ configuration.
 [sdk]: https://cloud.google.com/sdk
 [consul-template]: https://github.com/hashicorp/consul-template
 [vault-init]: https://github.com/sethvargo/vault-init
-[vault-k8s-auth-method]: https://www.vaultproject.io/docs/auth/kubernetetes
+[vault-k8s-auth-method]: https://www.vaultproject.io/docs/auth/kubernetes.html
 [vault-prod-hardening]: https://www.vaultproject.io/guides/operations/production.html
