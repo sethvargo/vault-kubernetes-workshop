@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-set -e
+set -Eeuo pipefail
 
-REGION="us-west1"
+source "$(cd "$(dirname "${0}")" &>/dev/null && pwd)/__helpers.sh"
 
-LB_IP="$(gcloud compute addresses describe vault --region ${REGION} --format 'value(address)')"
-
-kubectl apply -f - <<EOF
+kubectl apply \
+  --cluster="$(gke-cluster-name "vault")" \
+  --filename=-<<EOF
 ---
 apiVersion: v1
 kind: Service
@@ -15,7 +15,8 @@ metadata:
     app: vault
 spec:
   type: LoadBalancer
-  loadBalancerIP: ${LB_IP}
+  loadBalancerIP: $(vault-lb-ip)
+  externalTrafficPolicy: Local
   selector:
     app: vault
   ports:

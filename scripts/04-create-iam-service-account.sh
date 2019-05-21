@@ -1,17 +1,14 @@
 #!/usr/bin/env bash
-set -e
+set -Eeuo pipefail
 
-if [ -z "${GOOGLE_CLOUD_PROJECT}" ]; then
-  echo "Missing GOOGLE_CLOUD_PROJECT!"
-  exit 1
-fi
+source "$(cd "$(dirname "${0}")" &>/dev/null && pwd)/__helpers.sh"
 
-
-SERVICE_ACCOUNT="vault-server@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
+SERVICE_ACCOUNT="vault-server@$(google-project).iam.gserviceaccount.com"
 
 # Create the service account
 gcloud iam service-accounts create vault-server \
-  --display-name "vault service account"
+  --project="$(google-project)" \
+  --display-name="vault server"
 
 # (Optional) grant the service account the ability to generate new service
 # accounts. This is required to use the Vault GCP secrets engine, otherwise it
@@ -25,7 +22,7 @@ ROLES=(
   "roles/viewer"
 )
 for role in "${ROLES[@]}"; do
-  gcloud projects add-iam-policy-binding "${GOOGLE_CLOUD_PROJECT}" \
+  gcloud projects add-iam-policy-binding "$(google-project)" \
     --member "serviceAccount:${SERVICE_ACCOUNT}" \
     --role "${role}"
 done
@@ -35,11 +32,12 @@ done
 gsutil iam ch \
   "serviceAccount:${SERVICE_ACCOUNT}:objectAdmin" \
   "serviceAccount:${SERVICE_ACCOUNT}:legacyBucketReader" \
-  "gs://${GOOGLE_CLOUD_PROJECT}-vault-storage"
+  "gs://$(google-project)-vault-storage"
 
 # Grant the service account the ability to access the Cloud KMS crypto key
 gcloud kms keys add-iam-policy-binding vault-init \
-  --location global \
-  --keyring vault \
-  --member "serviceAccount:${SERVICE_ACCOUNT}" \
-  --role roles/cloudkms.cryptoKeyEncrypterDecrypter
+  --project="$(google-project)" \
+  --location="$(google-region)" \
+  --keyring="vault" \
+  --member="serviceAccount:${SERVICE_ACCOUNT}" \
+  --role="roles/cloudkms.cryptoKeyEncrypterDecrypter"

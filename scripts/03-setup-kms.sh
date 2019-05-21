@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-set -e
+set -Eeuo pipefail
 
-if [ -z "${GOOGLE_CLOUD_PROJECT}" ]; then
-  echo "Missing GOOGLE_CLOUD_PROJECT!"
-  exit 1
-fi
+source "$(cd "$(dirname "${0}")" &>/dev/null && pwd)/__helpers.sh"
 
 gcloud kms keyrings create vault \
-  --location global
+  --project="$(google-project)" \
+  --location="$(google-region)"
 
 gcloud kms keys create vault-init \
-  --location global \
-  --keyring vault \
-  --purpose encryption
+  --project="$(google-project)" \
+  --location="$(google-region)" \
+  --keyring="vault" \
+  --purpose="encryption"

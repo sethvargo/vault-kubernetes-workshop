@@ -23,13 +23,17 @@ spec:
               matchExpressions:
               - key: app
                 operator: In
-                values: ['vault']
+                values: ["vault"]
             topologyKey: kubernetes.io/hostname
       terminationGracePeriodSeconds: 10
       containers:
       - name: vault-init
-        image: registry.hub.docker.com/sethvargo/vault-init:0.1.1
-        imagePullPolicy: Always
+        image: registry.hub.docker.com/sethvargo/vault-init:1.0.0
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
         env:
         - name: CHECK_INTERVAL
           value: "5"
@@ -43,13 +47,19 @@ spec:
             configMapKeyRef:
               name: vault
               key: kms_key_id
+        - name: VAULT_ADDR
+          value: "http://127.0.0.1:8200"
+        - name: VAULT_SECRET_SHARES
+          value: "1"
+        - name: VAULT_SECRET_THRESHOLD
+          value: "1"
       - name: vault
-        image: registry.hub.docker.com/library/vault:0.10.4
+        image: registry.hub.docker.com/library/vault:1.0.2
         imagePullPolicy: Always
-        args: ['server']
+        args: ["server"]
         securityContext:
           capabilities:
-            add: ['IPC_LOCK']
+            add: ["IPC_LOCK"]
         ports:
         - containerPort: 8200
           name: vault-port
@@ -59,32 +69,63 @@ spec:
           protocol: TCP
         resources:
           requests:
-            cpu: '200m'
-            memory: '500M'
+            cpu: "500m"
+            memory: "256Mi"
         volumeMounts:
         - name: vault-tls
           mountPath: /etc/vault/tls
         env:
-        - name: POD_IP_ADDR
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
-        - name: LOAD_BALANCER_ADDR
-          valueFrom:
-            configMapKeyRef:
-              name: vault
-              key: load_balancer_address
         - name: GCS_BUCKET_NAME
           valueFrom:
             configMapKeyRef:
               name: vault
               key: gcs_bucket_name
+        - name: KMS_PROJECT
+          valueFrom:
+            configMapKeyRef:
+              name: vault
+              key: kms_project
+        - name: KMS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: vault
+              key: kms_region
+        - name: KMS_KEY_RING
+          valueFrom:
+            configMapKeyRef:
+              name: vault
+              key: kms_key_ring
+        - name: KMS_CRYPTO_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: vault
+              key: kms_crypto_key
+        - name: LOAD_BALANCER_ADDR
+          valueFrom:
+            configMapKeyRef:
+              name: vault
+              key: load_balancer_address
+        - name: POD_IP_ADDR
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: VAULT_ADDR
+          value: "http://127.0.0.1:8200"
         - name: VAULT_LOCAL_CONFIG
           value: |
-            api_addr     = "https://$(LOAD_BALANCER_ADDR):8200"
+            api_addr     = "https://$(LOAD_BALANCER_ADDR)"
             cluster_addr = "https://$(POD_IP_ADDR):8201"
 
+            log_level = "warn"
+
             ui = true
+
+            seal "gcpckms" {
+              project    = "$(KMS_PROJECT)"
+              region     = "$(KMS_REGION)"
+              key_ring   = "$(KMS_KEY_RING)"
+              crypto_key = "$(KMS_CRYPTO_KEY)"
+            }
 
             storage "gcs" {
               bucket     = "$(GCS_BUCKET_NAME)"
@@ -92,7 +133,12 @@ spec:
             }
 
             listener "tcp" {
-              address       = "0.0.0.0:8200"
+              address     = "127.0.0.1:8200"
+              tls_disable = "true"
+            }
+
+            listener "tcp" {
+              address       = "$(POD_IP_ADDR):8200"
               tls_cert_file = "/etc/vault/tls/vault.crt"
               tls_key_file  = "/etc/vault/tls/vault.key"
 

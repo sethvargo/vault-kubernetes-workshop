@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-set -e
+set -Eeuo pipefail
 
-REGION="us-west1"
-LB_IP="$(gcloud compute addresses describe vault --region ${REGION} --format 'value(address)')"
+source "$(cd "$(dirname "${0}")" &>/dev/null && pwd)/__helpers.sh"
+
+LB_IP="$(vault-lb-ip)"
 
 DIR="$(pwd)/tls"
 

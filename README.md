@@ -31,17 +31,11 @@ The first step is to install Vault. To install the Vault binary in the current
 working directory, run the install script.
 
 ```text
-bash ./scripts/00-install-vault.sh
+./scripts/00-install-vault.sh
 ```
 
-This will:
-
-1. Download and install GPG
-1. Download and trust the HashiCorp GPG key
-1. Download the Vault binary, checksums, and checksum signature
-1. Verify the signature is correct
-1. Verify the checksum is correct
-1. Unzip and mark the binary as executable in the current working directory
+This will install Vault using the `sethvargo/hashicorp-installer` Docker
+container which verifies GPG signatures and checksums from the download.
 
 This represents a "best practices" installation for installing secure software
 like Vault. By verifying the signature of the SHASUMs and then verifying the
@@ -51,18 +45,16 @@ security, you can download and compile Vault yourself from source, but that is
 out of scope for this workshop.
 
 Cloud Shell does not persist things in `/usr/local/bin` or `/usr/bin` between
-sessions. As such, it is recommended that you create a `~/bin` folder and add it
-to your path instead for recurring use. This workshop will use `./vault` to
-indicate running the Vault binary from the current working directory (it does
-not modify `PATH`).
+sessions. As such, Vault will be installed in `~/bin`. We recommend installing
+other binaries or software you need between sessions in this folder.
 
 ## 01 Enable Services
 
-By default, a new project does not have many services enabled. Enable all the
-required services with the `01-enable-services.sh` script:
+By default, a new Google Cloud project does not have many services enabled.
+Enable the required services (this only needs to be done once per project):
 
 ```text
-bash ./scripts/01-enable-services.sh
+./scripts/01-enable-services.sh
 ```
 
 This will make the necessary calls to enable the enable the right APIs on your
@@ -71,40 +63,35 @@ multiple times to achieve the same result).
 
 ## 02 Setup Storage
 
-Vault requires a storage backend in order to persist data. This workshop
-leverages [Google Cloud Storage][gcs]. Vault does not automatically create the
-storage bucket, so we create it in advance.
+Vault requires a storage backend to persist its data. This workshop leverages
+[Google Cloud Storage][gcs]. Vault does not automatically create the storage
+bucket, so we need to create:
 
 ```text
-bash ./scripts/02-setup-storage.sh
+./scripts/02-setup-storage.sh
 ```
 
 Cloud Storage bucket names must be globally unique across all of Google Cloud.
-To ensure uniqueness, the bucket will be named "${PROJECT}-vault-storage".
+The bucket will be named "${PROJECT}-vault-storage".
 
 For security purposes, it is not recommended that other applications or services
-have access to this bucket. Even though the data is encrypted at rest, it's best
-to limit the scope of access as much as possible.
+have access to this bucket. Even though the data is encrypted at rest, it is
+best to limit the scope of access as much as possible.
 
 ## 03 Setup KMS
 
-The [vault-init][vault-init] container automatically initializes and unseals the
-Vault cluster. It stores the initial root token and unseal keys in the same
-storage bucket, but encrypts them using a KMS key. We must create this KMS key
-in advance.
+Vault will leverage [Google Cloud KMS][kms] to encrypt its unseal keys for
+auto-unsealing and auto-scaling purposes. We must create the KMS key in advance:
 
 ```text
-bash ./scripts/03-setup-kms.sh
+./scripts/03-setup-kms.sh
 ```
 
 ## 04 Create IAM Service Account
 
-If you are the first user in your project (as is the case with the dedicated
-projects for this workshop), you are a super user with full permission. It is a
-best practice to create a limited, dedicated service account that has only the
-required permissions. The `04-create-iam-service-account.sh` script creates a
-dedicated service account in the project and grants that service account the
-most minimal set of permissions, in particular:
+It is a best practice to create a limited, dedicated service account that has
+only the required permissions. Create a dedicated service account in the project
+and grant it the most minimal set of permissions, in particular:
 
 - The ability to read/write to the Cloud Storage bucket created above
 - The ability to encrypt/decrypt data with the KMS key created above
@@ -112,23 +99,23 @@ most minimal set of permissions, in particular:
   helpful if you plan to use the Vault GCP secrets engine)
 
 ```text
-bash ./scripts/04-create-iam-service-account.sh
+./scripts/04-create-iam-service-account.sh
 ```
 
 ## 05 Create Kubernetes Cluster
 
-Next we need to create the Kubernetes (GKE) cluster which will run Vault. It is
-recommended that you run Vault in a dedicated namespace or (even better) a
-dedicated cluster and a dedicated project. Vault will then act as a "service"
-with an IP/DNS entry that other projects and services query.
+Next we need to create the [Google Kubernetes Engine][gke] (GKE) cluster which
+will run Vault. It is recommended that you run Vault in a dedicated namespace or
+(even better) a dedicated cluster and a dedicated project. Vault will then act
+as a service with an IP/DNS entry that other projects and services query.
 
 ```text
-bash ./scripts/05-create-k8s-cluster.sh
+./scripts/05-create-k8s-cluster.sh
 ```
 
 This will create the cluster and attach the service account created in the
 previous step to the cluster. It also ensures the cluster has the correct oauth
-scopes and automatically enables logging and monitoring.
+scopes.
 
 ## 06 Create Public IP
 
@@ -137,7 +124,7 @@ we will attach this reserved IP address to a Kubernetes load balancer. For now,
 we will just reserve the dedicated IP address.
 
 ```text
-bash ./scripts/06-create-public-ip.sh
+./scripts/06-create-public-ip.sh
 ```
 
 We use a regional IP address instead of a global IP address because global IPs
@@ -154,11 +141,11 @@ service an ephemeral IP or will manage it via an external DNS service.
 
 This is arguably the most complex and nuanced piece of the workshop - generating
 Vault's certificate authority and server certificates for TLS. Vault can run
-without TLS, but this is highly discouraged. This step could be replaced with a
-trusted CA like Let's Encrypt, but that is out of scope for this workshop.
+without TLS, but this is _highly_ discouraged. This step could be replaced with
+a trusted CA like Let's Encrypt, but that is out of scope for this workshop.
 
 ```text
-bash ./scripts/07-create-certs.sh
+./scripts/07-create-certs.sh
 ```
 
 This will create the Certificate Authority (`ca.key`, `ca.crt`) and Vault
@@ -173,12 +160,13 @@ configmap. The secure data like the TLS certificates are put in a Kubernetes
 secret.
 
 ```text
-bash ./scripts/08-setup-config.sh
+./scripts/08-setup-config.sh
 ```
 
 ## 09 Deploy Vault
 
-The next step is to actually deploy Vault as a StatefulSet on Kubernetes. The reason we use a StatefulSet is two-fold:
+The next step is to actually deploy Vault as a StatefulSet on Kubernetes. The
+reason we use a StatefulSet is two-fold:
 
 1. It guarantees exactly one service starts at a time. This is required by the
 [vault-init][vault-init] sidecar service.
@@ -187,7 +175,7 @@ The next step is to actually deploy Vault as a StatefulSet on Kubernetes. The re
 nice for a workshop).
 
 ```text
-bash ./scripts/09-deploy-vault.sh
+./scripts/09-deploy-vault.sh
 ```
 
 Vault will automatically be initialized and unsealed via the vault-init service.
@@ -199,7 +187,7 @@ a Kubernetes Service Load Balancer to forward from the IP address reserved in
 the previous steps to the pods we just created.
 
 ```text
-bash ./scripts/10-deploy-lb.sh
+./scripts/10-deploy-lb.sh
 ```
 
 The load balancer listens on port 443 and forwards to port 8200 on the
@@ -222,7 +210,7 @@ certificates, we'll need to trust the appropriate CA, etc. This will:
 - Set `VAULT_TOKEN` to the decrypted root token by decrypting it from KMS
 
 ```text
-bash ./scripts/11-setup-comms.sh
+./scripts/11-setup-comms.sh
 ```
 
 At this point, the local Vault CLI is configured to communicate with our Vault
@@ -240,7 +228,7 @@ applications which cannot handle graceful restarts or when secrets cannot be
 dynamically generated by Vault.
 
 ```text
-bash ./scripts/12-setup-static-kv.sh
+./scripts/12-setup-static-kv.sh
 ```
 
 This will:
@@ -280,7 +268,7 @@ recommended that you run these in completely separate projects. For the purpose
 of this workshop, we will run them in the same project.
 
 ```text
-bash ./scripts/13-create-another-cluster.sh
+./scripts/13-create-another-cluster.sh
 ```
 
 This will provision a new Kubernetes cluster named "my-apps". We will deploy
@@ -298,7 +286,7 @@ authentication is successful, Vault generates a token and maps a series of
 configured policies onto the token which is returned to the caller.
 
 ```text
-bash ./scripts/14-create-service-account.sh
+./scripts/14-create-service-account.sh
 ```
 
 This will create a dedicated service account named "vault-auth" and grant that
@@ -312,7 +300,7 @@ cluster, the CA information, and the service account to use for accessing the
 token reviewer API.
 
 ```text
-bash ./scripts/15-setup-vault-comms-k8s.sh
+./scripts/15-setup-vault-comms-k8s.sh
 ```
 
 This process will:
@@ -342,7 +330,7 @@ policies in Vault. That way, when an application successfully authenticates to
 Vault via its JWT token, Vault knows which policies to assign to the response.
 
 ```text
-bash ./scripts/16-create-kv-role.sh
+./scripts/16-create-kv-role.sh
 ```
 
 This will create a role named "myapp-role" that permits pods in the "default"
@@ -351,7 +339,8 @@ the "myapp-kv-rw" policy attached.
 
 ## 17 Sidecar Static App
 
-This is one of the most common techniques for injecting Vault secrets into an application.
+This is one of the most common techniques for injecting Vault secrets into an
+application.
 
 1. An init container pulls the service account JWT token and performs the auth
 mechanism for that service account. If successful, it stores the resulting
@@ -367,7 +356,13 @@ file with the secrets from Vault to a shared volume mount which the app reads.
 application that just reads the contents of `/etc/secrets/config` repeatedly.
 
 ```text
-bash ./scripts/17-run-kv-sidecar.sh
+./scripts/17-run-kv-sidecar.sh
+```
+
+Verify the app is authenticating and retrieving secrets from Vault:
+
+```text
+./scripts/kubectl-logs.sh kv-sidecar
 ```
 
 ## 18 Setup Dynamic Credentials
@@ -378,7 +373,7 @@ this example, we will leverage the GCP secrets engine to dynamically generate
 Google Cloud Platform CloudSQL MySQL users.
 
 ```text
-bash ./18-setup-dynamic-creds.sh
+./scripts/18-setup-dynamic-creds.sh
 ```
 
 This will:
@@ -396,12 +391,17 @@ This will:
 1. Update the Vault Kubernetes auth mapping to include this new policy when
 authenticating
 
+This process can take up to 10 minutes to complete.
+
 ## 19 Sidecar Dynamic App
 
-In this example, we follow the same pattern as the static KV secrets, but our sidecar application will pull dynamic credentials from Vault. In this case, we will be pulling a Google Cloud Platform Service Account, but this could be a database password or other dynamically generated credential.
+In this example, we follow the same pattern as the static KV secrets, but our
+sidecar application will pull dynamic credentials from Vault. In this case, we
+will be pulling a Google Cloud Platform Service Account, but this could be a
+database password or other dynamically generated credential.
 
 ```text
-bash ./scripts/19-run-db-sidecar.sh
+./scripts/19-run-db-sidecar.sh
 ```
 
 This also configures a command to run which will signal the application when the
@@ -409,8 +409,16 @@ underlying service account changes. This is important as we need to notify the
 application (which is not aware of Vault's existence) that it should reload its
 configuration.
 
+Verify the app is authenticating and retrieving secrets from Vault:
+
+```text
+./scripts/kubectl-logs.sh db-sidecar
+```
+
 [cs]: https://cloud.google.com/shell
 [gcs]: https://cloud.google.com/storage
+[gke]: https://cloud.google.com/gke
+[kms]: https://cloud.google.com/kms
 [sdk]: https://cloud.google.com/sdk
 [consul-template]: https://github.com/hashicorp/consul-template
 [vault-init]: https://github.com/sethvargo/vault-init

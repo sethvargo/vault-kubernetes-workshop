@@ -26,20 +26,21 @@ spec:
         emptyDir:
           medium: Memory
 
+      securityContext:
+        runAsGroup: 1000
+
       initContainers:
       # The vault-authenticator container authenticates the container using the
       # kubernetes auth method and puts the resulting token on the filesystem.
       - name: vault-authenticator
-        image: registry.hub.docker.com/sethvargo/vault-kubernetes-authenticator:0.1.0
-        imagePullPolicy: Always
+        image: sethvargo/vault-kubernetes-authenticator:0.2.0
+        imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: vault-token
-          mountPath: /home/vault
+          mountPath: /var/run/secrets/vaultproject.io
         - name: vault-tls
           mountPath: /etc/vault/tls
         env:
-        - name: TOKEN_DEST_PATH
-          value: /home/vault/.vault-token
         - name: VAULT_ADDR
           valueFrom:
             configMapKeyRef:
@@ -54,8 +55,8 @@ spec:
         # The consul-template container will pull secrets from Vault and expose
         # them as files on disk.
       - name: consul-template
-        image: registry.hub.docker.com/sethvargo/consul-template:0.19.5.dev-alpine
-        imagePullPolicy: Always
+        image: hashicorp/consul-template:0.20.0-light
+        imagePullPolicy: IfNotPresent
         securityContext:
           capabilities:
             add: ['SYS_PTRACE']
@@ -65,10 +66,8 @@ spec:
         - name: vault-tls
           mountPath: /etc/vault/tls
         - name: vault-token
-          mountPath: /home/vault
+          mountPath: /var/run/secrets/vaultproject.io
         env:
-        - name: HOME
-          value: /home/vault
         - name: VAULT_ADDR
           valueFrom:
             configMapKeyRef:
@@ -79,6 +78,8 @@ spec:
         - name: CT_LOCAL_CONFIG
           value: |
             vault {
+              vault_agent_token_file = "/var/run/secrets/vaultproject.io/.vault-token"
+
               ssl {
                 ca_cert = "/etc/vault/tls/ca.crt"
               }
@@ -100,8 +101,8 @@ spec:
             }
 
       - name: app
-        image: registry.hub.docker.com/sethvargo/vault-demo-app:0.1.0
-        imagePullPolicy: Always
+        image: sethvargo/vault-demo-app:0.1.0
+        imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: secrets
           mountPath: /etc/secrets

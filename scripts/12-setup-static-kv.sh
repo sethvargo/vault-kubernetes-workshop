@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-set -e
+set -Eeuo pipefail
+
+source "$(cd "$(dirname "${0}")" &>/dev/null && pwd)/__helpers.sh"
 
 # This creates a policy that allows reading, writing, and deleting from anything
 # under "myapp" in the kv secrets engine just created. This policy still must

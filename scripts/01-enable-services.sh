@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
-set -e
+set -Eeuo pipefail
 
-if [ -z "${GOOGLE_CLOUD_PROJECT}" ]; then
-  echo "Missing GOOGLE_CLOUD_PROJECT!"
-  exit 1
-fi
+source "$(cd "$(dirname "${0}")" &>/dev/null && pwd)/__helpers.sh"
 
 gcloud services enable \
   --async \
+  --project="$(google-project)" \
   cloudapis.googleapis.com \
   cloudkms.googleapis.com \
   cloudresourcemanager.googleapis.com \
+  cloudshell.googleapis.com \
   container.googleapis.com \
   containerregistry.googleapis.com \
   iam.googleapis.com

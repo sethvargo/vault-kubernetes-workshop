@@ -1,20 +1,17 @@
 #!/usr/bin/env bash
-set -e
+set -Eeuo pipefail
 
-if [ -z "${GOOGLE_CLOUD_PROJECT}" ]; then
-  echo "Missing GOOGLE_CLOUD_PROJECT!"
-  exit 1
-fi
+source "$(cd "$(dirname "${0}")" &>/dev/null && pwd)/__helpers.sh"
 
-ZONE="us-west1-b"
-
-# Create a cluster with alpha features so we can do process namespace sharing
+# Create a cluster to do process namespace sharing
 gcloud container clusters create my-apps \
-  --cluster-version 1.10.2-gke.3 \
-  --enable-cloud-logging \
-  --enable-cloud-monitoring \
-  --machine-type n1-standard-2 \
-  --enable-kubernetes-alpha \
-  --num-nodes 3 \
-  --scopes "cloud-platform" \
-  --zone "${ZONE}"
+  --project="$(google-project)" \
+  --cluster-version="$(gke-latest-master-version)" \
+  --enable-autorepair \
+  --enable-autoupgrade \
+  --enable-ip-alias \
+  --machine-type=n1-standard-2 \
+  --node-version="$(gke-latest-node-version)" \
+  --num-nodes=1 \
+  --region="$(google-region)" \
+  --scopes="cloud-platform"

@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
-set -e
+set -Eeuo pipefail
 
-kubectl create serviceaccount vault-auth
-kubectl apply -f - <<EOH
+source "$(cd "$(dirname "${0}")" &>/dev/null && pwd)/__helpers.sh"
+
+kubectl create serviceaccount vault-auth \
+  --cluster="$(gke-cluster-name "my-apps")"
+
+kubectl apply \
+  --cluster="$(gke-cluster-name "my-apps")" \
+  --filename=-<<EOH
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
