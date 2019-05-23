@@ -5,13 +5,13 @@ source "$(cd "$(dirname "${0}")" &>/dev/null && pwd)/__helpers.sh"
 
 SERVICE_ACCOUNT="vault-server@$(google-project).iam.gserviceaccount.com"
 
-kubectl delete pod kv-sidecar \
-  --cluster="$(gke-cluster-name "my-apps")"
+kubectl delete deployment kv-sidecar \
+  --cluster="$(gke-cluster-name "my-apps")" \
   --force \
   --grace-period=0
 
-kubectl delete pod sa-sidecar \
-  --cluster="$(gke-cluster-name "my-apps")"
+kubectl delete deployment sa-sidecar \
+  --cluster="$(gke-cluster-name "my-apps")" \
   --force \
   --grace-period=0
 
