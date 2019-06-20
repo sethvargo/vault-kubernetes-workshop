@@ -397,8 +397,7 @@ This process can take up to 10 minutes to complete.
 
 In this example, we follow the same pattern as the static KV secrets, but our
 sidecar application will pull dynamic credentials from Vault. In this case, we
-will be pulling a Google Cloud Platform Service Account, but this could be a
-database password or other dynamically generated credential.
+will be creating a database password.
 
 ```text
 ./scripts/19-run-db-sidecar.sh
