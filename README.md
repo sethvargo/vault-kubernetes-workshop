@@ -240,13 +240,13 @@ This will:
 Try reading back the secret by running:
 
 ```text
-vault kv get secret/myapp/config
+vault kv get kv/myapp/config
 ```
 
 You can also read the data via a request tool like curl.
 
 ```text
-curl -k -H "x-vault-token:${VAULT_TOKEN}" "${VAULT_ADDR}/v1/secret/myapp/config"
+curl -k -H "x-vault-token:${VAULT_TOKEN}" "${VAULT_ADDR}/v1/kv/myapp/config"
 ```
 
 ## 13 Another Cluster
