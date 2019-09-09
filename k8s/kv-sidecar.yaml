@@ -26,6 +26,7 @@ spec:
           medium: Memory
 
       securityContext:
+        runAsUser: 1000
         runAsGroup: 1000
 
       initContainers:
@@ -34,8 +35,6 @@ spec:
       - name: vault-authenticator
         image: sethvargo/vault-kubernetes-authenticator:0.2.0
         imagePullPolicy: IfNotPresent
-        securityContext:
-          runAsGroup: 1000
         volumeMounts:
         - name: vault-token
           mountPath: /var/run/secrets/vaultproject.io
