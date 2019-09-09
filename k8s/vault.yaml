@@ -54,8 +54,8 @@ spec:
         - name: VAULT_SECRET_THRESHOLD
           value: "1"
       - name: vault
-        image: registry.hub.docker.com/library/vault:1.0.2
-        imagePullPolicy: Always
+        image: registry.hub.docker.com/library/vault:1.2.2
+        imagePullPolicy: IfNotPresent
         args: ["server"]
         securityContext:
           capabilities:
